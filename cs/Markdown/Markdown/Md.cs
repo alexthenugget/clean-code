@@ -2,18 +2,13 @@
 
 public class Md
 {
-    private readonly Tokenizer tokenizer;
-    private readonly HtmlRenderer renderer;
-
-    public Md()
-    {
-        tokenizer = new Tokenizer();
-        renderer = new HtmlRenderer();
-    }
+    private Tokenizer tokenizer;
+    private Parser parser;
 
     public string Render(string markdown)
     {
-        var tokens = tokenizer.Tokenize(markdown);
-        return renderer.RenderHtml(tokens);
+        tokenizer = new Tokenizer(markdown);
+        parser = new Parser(tokenizer.Tokenize());
+        return parser.Parse();
     }
 }

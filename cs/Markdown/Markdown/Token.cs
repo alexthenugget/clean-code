@@ -1,9 +1,12 @@
 ﻿namespace Markdown;
 
-public class Token(TokenType type, string value, int position)
+public class Token(TokenType type, string value)
 {
-    public int Length { get; } = value.Length;
-    public int Position { get; } = position;
-    public string Value { get; } = value;
     public TokenType Type { get; } = type;
+    public string Value { get; } = value;
+    
+    public override string ToString()
+    {
+        return Value;
+    }
 }

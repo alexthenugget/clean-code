@@ -5,25 +5,13 @@ using NUnit.Framework;
 
 public class MarkdownTests
 {
-    [Test]
-    public void Markdown_SimpleText()
+    [TestCase("Simple text", "Simple text", TestName = "Тест без спец символов")]
+    [TestCase("_Simple text_", "<em>Simple text</em>", TestName = "Простой тест курсив")]
+    [TestCase("__Simple text__", "<strong>Simple text</strong>", TestName = "Простой тест полужирный")]
+    public void Markdown_Render_ReturnsExpectedResult(string input, string expected)
     {
         var md = new Md();
-        var result = md.Render("Simple text");
-        result.Should().Be("Simple text");
-    }
-    [Test]
-    public void Markdown_SimpleEmphasisText()
-    {
-        var md = new Md();
-        var result = md.Render("_Simple text_");
-        result.Should().Be("<em>Simple text</em>");
-    }
-    [Test]
-    public void Markdown_SimpleStrongText()
-    {
-        var md = new Md();
-        var result = md.Render("__Simple text__");
-        result.Should().Be("<strong>Simple text</strong>");
+        var result = md.Render(input);
+        result.Should().Be(expected);
     }
 }

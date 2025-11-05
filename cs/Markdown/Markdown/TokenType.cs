@@ -2,12 +2,11 @@
 
 public enum TokenType
 {
-    EmphasisOpen,
-    EmphasisClose,
-    StrongOpen,
-    StrongClose,
+    Emphasis,
+    Strong,
     Header,
     Text,
     NewLine,
-    EscapedChar
+    EscapedChar,
+    Eof
 }
