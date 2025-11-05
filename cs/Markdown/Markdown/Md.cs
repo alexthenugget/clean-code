@@ -3,12 +3,17 @@
 public class Md
 {
     private Tokenizer tokenizer;
-    private Parser parser;
+    private Renderer renderer;
+    
+    public Md()
+    {
+        tokenizer = new Tokenizer();
+        renderer = new Renderer();
+    }
 
     public string Render(string markdown)
     {
-        tokenizer = new Tokenizer(markdown);
-        parser = new Parser(tokenizer.Tokenize());
-        return parser.Parse();
+        List<Token> tokens = tokenizer.Tokenize(markdown);
+        return renderer.Render(tokens);
     }
 }

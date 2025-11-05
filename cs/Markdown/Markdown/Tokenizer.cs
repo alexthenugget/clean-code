@@ -4,15 +4,9 @@ namespace Markdown;
 
 public class Tokenizer
 {
-    private readonly string markdown;
     private int position = 0;
     
-    public Tokenizer(string markdown)
-    {
-        this.markdown = markdown;
-    }
-    
-    public List<Token> Tokenize()
+    public List<Token> Tokenize(string markdown)
     {
         var tokens = new List<Token>();
         while (position < markdown.Length)
