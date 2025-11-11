@@ -7,6 +7,8 @@ public enum TokenType
     Header,
     Text,
     NewLine,
+    Whitespace,
     EscapedChar,
-    Eof
+    Eof,
+    Ref
 }
