@@ -1,25 +1,44 @@
-﻿using System.Text;
-
-namespace Markdown;
+﻿namespace Markdown.Tokenization;
 
 public class Tokenizer
 {
-    private string markdown;
+    private readonly string markdown;
     private int position;
-    private char CurrentChar => markdown[position];
-    private char NextChar => position + 1 < markdown.Length ? markdown[position + 1] : '\0';
-    private char PrevChar => position > 0 ? markdown[position - 1] : '\0';
     
-    public List<Token> Tokenize(string markdown)
+    private static readonly HashSet<char> SpecialCharacters = new()
+    {
+        '\\',
+        ' ',
+        '_',
+        '#',
+        '\n',
+        '[',
+        ']',
+        '(',
+        ')'
+    };
+    
+    char CurrentChar => markdown[position];
+    char NextChar => position + 1 < markdown.Length ? markdown[position + 1] : '\0';
+    char PrevChar => position > 0 ? markdown[position - 1] : '\0';
+
+    private Tokenizer(string markdown)
     {
         this.markdown = markdown;
-        this.position = 0;
-        
+        position = 0;
+    }
+
+    public static Tokenizer CreateFor(string markdown) => new (markdown);
+
+    public List<Token> Tokenize()
+    {
         var tokens = new List<Token>();
+        
         while (position < markdown.Length)
         {
             tokens.Add(GetNextToken());
         }
+        
         tokens.Add(new Token(TokenType.Eof, "\0"));
         return tokens;
     }
@@ -40,8 +59,20 @@ public class Tokenizer
                 return HandleHeader();
             case '\n':
                 return HandleNewLine();
+            case '[':
+                position++;
+                return new Token(TokenType.LeftBracket, "[");
+            case ']':
+                position++;
+                return new Token(TokenType.RightBracket, "]");
+            case '(':
+                position++;
+                return new Token(TokenType.LeftParen, "(");
+            case ')':
+                position++;
+                return new Token(TokenType.RightParen, ")");
             default:
-                return HandleText(); 
+                return HandleText();
         }
     }
 
@@ -53,72 +84,119 @@ public class Tokenizer
     
     private Token HandleDoubleUnderscore()
     {
-        var char3 = (position + 2 < markdown.Length) ? markdown[position + 2] : '\0';
-        var char4 = (position + 3 < markdown.Length) ? markdown[position + 3] : '\0';
+        var next = (position + 2 < markdown.Length) ? markdown[position + 2] : '\0';
+        var afterNext = (position + 3 < markdown.Length) ? markdown[position + 3] : '\0';
     
-        if (char3 == '_' && char4 == '_')
+        if (next == '_' && afterNext == '_')
         {
             position += 4;
             return new Token(TokenType.Text, "____");
         }
-
-        var charAfter = char3;
-            
-        var isAdjacentToDigitStrong = char.IsDigit(PrevChar) || char.IsDigit(charAfter);
-        if (isAdjacentToDigitStrong)
-        {
-            position += 2;
-            return new Token(TokenType.Text, "__");
-        }
-
-        bool canBeOpenerEm = !char.IsWhiteSpace(charAfter) && charAfter != '\0';
-        bool canBeCloserEm = !char.IsWhiteSpace(PrevChar) && PrevChar != '\0';
-
-        if (!canBeOpenerEm && !canBeCloserEm)
-        {
-            position += 2;
-            return new Token(TokenType.Text, "__");
-        }
-            
-        position += 2;
-        return new Token(TokenType.Strong, "__");
         
+        var charBefore = PrevChar;
+        
+        if (!char.IsWhiteSpace(next) && !char.IsWhiteSpace(charBefore))
+        {
+            if (char.IsDigit(next) || char.IsDigit(charBefore))
+            {
+                position+=2;
+                return new Token(TokenType.Text, "__");
+            }
+            position+=2;
+            return new Token(TokenType.Strong, "__");
+        }
+
+        if (char.IsWhiteSpace(next) && char.IsWhiteSpace(charBefore))
+        {
+            position+=2;
+            return new Token(TokenType.Strong, "__", true, true);
+        }
+        if (char.IsWhiteSpace(next))
+        {
+            position+=2;
+            return new Token(TokenType.Strong, "__", false, true);
+        }
+        position+=2;
+        return new Token(TokenType.Strong, "__", true, false);
     }
 
     private Token HandleSingleUnderscore()
     {
-        var charAfterSingle = NextChar;
-        var charBefore = PrevChar;
-        
-        var isAdjacentToDigitEmphasis = char.IsDigit(charBefore) || char.IsDigit(charAfterSingle);
-        if (isAdjacentToDigitEmphasis)
+        try
+        {
+            var charAfter = NextChar;
+            var charBefore = PrevChar;
+
+            if (!char.IsWhiteSpace(charAfter) && !char.IsWhiteSpace(charBefore))
+            {
+                if (char.IsDigit(charAfter) || char.IsDigit(charBefore))
+                    return new Token(TokenType.Text, "_");
+
+                if (charBefore == '\\')
+                    return new Token(TokenType.Emphasis, "_", true, false);
+
+                return new Token(TokenType.Emphasis, "_");
+            }
+
+            if (char.IsWhiteSpace(charAfter) && char.IsWhiteSpace(charBefore))
+                return new Token(TokenType.Emphasis, "_", true, true);
+
+            if (char.IsWhiteSpace(charAfter))
+                return new Token(TokenType.Emphasis, "_", false, true);
+
+            return new Token(TokenType.Emphasis, "_", true, false);
+        }
+        finally
         {
             position++;
-            return new Token(TokenType.Text, "_");
         }
-
-        if (char.IsLetterOrDigit(charBefore) && char.IsLetterOrDigit(charAfterSingle))
-        {
-            position++;
-            return new Token(TokenType.Text, "_");
-        }
-
-        bool canBeOpener = !char.IsWhiteSpace(charAfterSingle) && charAfterSingle != '\0';
-        bool canBeCloser = !char.IsWhiteSpace(charBefore) && charBefore != '\0';
-
-        if (!canBeOpener && !canBeCloser)
-        {
-            position++;
-            return new Token(TokenType.Text, "_");
-        }
-        position++;
-        return new Token(TokenType.Emphasis, "_");
     }
 
     private Token HandleEscapedChar()
     {
+        if (NextChar == '_')
+        {
+            position += 2;
+            return new Token(TokenType.Text, "_");
+        }
+
+        if (NextChar == '\\')
+        {
+            position += 2;
+            return new Token(TokenType.Text, "\\");
+        }
+        
+        if (NextChar == '#')
+        {
+            position += 2;
+            return new Token(TokenType.Text, "#");
+        }
+        
+        if (NextChar == '[')
+        {
+            position += 2;
+            return new Token(TokenType.Text, "[");
+        }
+        
+        if (NextChar == ']')
+        {
+            position += 2;
+            return new Token(TokenType.Text, "]");
+        }
+        
+        if (NextChar == '(')
+        {
+            position += 2;
+            return new Token(TokenType.Text, "(");
+        }
+        
+        if (NextChar == ')')
+        {
+            position += 2;
+            return new Token(TokenType.Text, ")");
+        }
         position++;
-        return new Token(TokenType.EscapedChar, "\\");
+        return new Token(TokenType.Text, "\\");
     }
 
     private Token HandleHeader()
@@ -135,17 +213,14 @@ public class Tokenizer
 
     private Token HandleText()
     {
-        var stringBuilder = new StringBuilder();
-        while (position < markdown.Length 
-               && CurrentChar != '_' 
-               && CurrentChar != '#' 
-               && CurrentChar != '\n' 
-               && CurrentChar != '\\'
-               && CurrentChar != ' ')
+        var startPosition = position;
+        position++;
+        while (position < markdown.Length && !SpecialCharacters.Contains(CurrentChar))
         {
-            stringBuilder.Append(CurrentChar);
             position++;
         }
-        return new Token(TokenType.Text, stringBuilder.ToString());
+
+        var textValue = markdown.Substring(startPosition, position - startPosition);
+        return new Token(TokenType.Text, textValue);
     }
 }

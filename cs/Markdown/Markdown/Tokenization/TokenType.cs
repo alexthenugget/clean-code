@@ -1,4 +1,4 @@
-﻿namespace Markdown;
+﻿namespace Markdown.Tokenization;
 
 public enum TokenType
 {
@@ -8,7 +8,9 @@ public enum TokenType
     Text,
     NewLine,
     Whitespace,
-    EscapedChar,
     Eof,
-    Ref
+    LeftBracket,
+    RightBracket,
+    LeftParen,
+    RightParen
 }

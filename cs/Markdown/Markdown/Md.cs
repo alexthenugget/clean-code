@@ -1,22 +1,20 @@
-﻿namespace Markdown;
+﻿using Markdown.Parsing;
+using Markdown.Rendering;
+using Markdown.Tokenization;
+
+namespace Markdown;
 
 public class Md
 {
-    private Tokenizer tokenizer;
-    private Parser parser;
-    private Renderer renderer;
-    
-    public Md()
+    public static string Render(string markdown)
     {
-        tokenizer = new Tokenizer();
-        parser = new Parser();
-        renderer = new Renderer();
-    }
-
-    public string Render(string markdown)
-    {
-        List<Token> tokens = tokenizer.Tokenize(markdown);
-        Node root = parser.Parse(tokens);
-        return renderer.Render(root);
+        var tokenizer = Tokenizer.CreateFor(markdown);
+        var tokens = tokenizer.Tokenize(); 
+        
+        var parser = Parser.CreateFor(tokens);
+        var root = parser.Parse();
+        
+        var renderer = new HtmlRenderer();
+        return renderer.GetString(root);
     }
 }

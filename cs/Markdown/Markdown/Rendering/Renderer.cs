@@ -1,21 +1,24 @@
 ﻿using System.Text;
+using Markdown.Structures;
 
-namespace Markdown;
+namespace Markdown.Rendering;
 
-public class Renderer : IVisitor
+public class HtmlRenderer : IRenderer
 {
     private StringBuilder html;
-    public void Visit(TextNode node)
+    public string GetString(Node root)
+    {
+        html = new StringBuilder();
+        root.Accept(this);
+        return html.ToString();
+    }
+    
+    void IRenderer.Render(TextNode node)
     {
         html.Append(node.Content);
     }
 
-    public void Visit(WhitespaceNode node)
-    {
-        html.Append(node.Content);
-    }
-
-    public void Visit(RootNode node)
+    void IRenderer.Render(RootNode node)
     {
         foreach (var child in node.Children)
         {
@@ -23,7 +26,7 @@ public class Renderer : IVisitor
         }
     }
 
-    public void Visit(HeaderNode node)
+    void IRenderer.Render(HeaderNode node)
     {
         html.Append("<h1>");
         foreach (var child in node.Children)
@@ -33,7 +36,7 @@ public class Renderer : IVisitor
         html.Append("</h1>");
     }
 
-    public void Visit(StrongNode node)
+    void IRenderer.Render(StrongNode node)
     {
         html.Append("<strong>");
         foreach (var child in node.Children)
@@ -43,7 +46,7 @@ public class Renderer : IVisitor
         html.Append("</strong>");
     }
 
-    public void Visit(EmphasisNode node)
+    void IRenderer.Render(EmphasisNode node)
     {
         html.Append("<em>");
         foreach (var child in node.Children)
@@ -52,11 +55,9 @@ public class Renderer : IVisitor
         }
         html.Append("</em>");
     }
-
-    public string Render(Node root)
+    
+    void IRenderer.Render(LinkNode node)
     {
-        html = new StringBuilder();
-        root.Accept(this);
-        return html.ToString();
+        html.Append($"<a href=\"{node.Url}\">{node.Text}</a>");
     }
 }

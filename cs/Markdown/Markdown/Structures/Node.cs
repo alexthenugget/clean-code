@@ -1,9 +1,11 @@
-﻿namespace Markdown;
+﻿using Markdown.Rendering;
+
+namespace Markdown.Structures;
 
 public abstract class Node
 {
     public List<Node> Children { get; } = new List<Node>();
-    public abstract void Accept(IVisitor visitor);
+    public abstract void Accept(IRenderer visitor);
     
     public void AddChild(Node child)
     {
@@ -13,9 +15,9 @@ public abstract class Node
 
 public class RootNode : Node
 {
-    public override void Accept(IVisitor visitor)
+    public override void Accept(IRenderer visitor)
     {
-        visitor.Visit(this);
+        visitor.Render(this);
     }
 }
 
@@ -23,42 +25,48 @@ public class TextNode(string content) : Node
 {
     public string Content { get; } = content;
 
-    public override void Accept(IVisitor visitor)
+    public override void Accept(IRenderer visitor)
     {
-        visitor.Visit(this);
+        visitor.Render(this);
     }
 }
 
 public class HeaderNode : Node
 {
-    public override void Accept(IVisitor visitor)
+    public override void Accept(IRenderer visitor)
     {
-        visitor.Visit(this);
+        visitor.Render(this);
     }
 }
 
-public class StrongNode : Node
+public class StrongNode(bool isInvalid = false, bool isInWord = false) : Node
 {
-    public override void Accept(IVisitor visitor)
+    public bool IsInvalid { get; set; } = isInvalid;
+    public bool IsInWord { get; set; } = isInWord;
+    public override void Accept(IRenderer visitor)
     {
-        visitor.Visit(this);
+        visitor.Render(this);
     }
 }
 
-public class EmphasisNode : Node
+public class EmphasisNode(bool isInvalid = false, bool isInWord = false) : Node
 {
-    public override void Accept(IVisitor visitor)
+    public bool IsInvalid { get; set; } = isInvalid;
+    public bool IsInWord { get; set; } = isInWord;
+
+    public override void Accept(IRenderer visitor)
     {
-        visitor.Visit(this);
+        visitor.Render(this);
     }
 }
 
-public class WhitespaceNode(string content) : Node
+public class LinkNode() : Node
 {
-    public string Content { get; } = content;
-    
-    public override void Accept(IVisitor visitor)
+    public string Text { get; set; } 
+    public string Url { get; set; }
+
+    public override void Accept(IRenderer visitor)
     {
-        visitor.Visit(this);
+        visitor.Render(this);
     }
 }
